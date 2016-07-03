@@ -15,9 +15,9 @@
 - ./MC  (模拟多个客户端，运行压力测试脚本)
 
 ### 客户端命令|功能
-USER XXX | 用户名 XXX
-PASS XXX | 密码 XXX
-RETR     | 从服务器上下载文件
+- USER XXX | 用户名 XXX
+- PASS XXX | 密码 XXX
+- RETR     | 从服务器上下载文件
 
 ### 服务器
 - 实现客户端的身份认证
