@@ -100,13 +100,13 @@ void setnonblocking(int s_s)
 
 void dispatchCmd(const char buff[], char *s1, char *s2)
 {
-	int i, len = strlen(buff);
+	int i, j, len = strlen(buff);
 	memset(s1, 0, sizeof s1);
 	memset(s2, 0, sizeof s2);
 
-	for(i = 0;i < PRE;i ++) s1[i] = buff[i];
-	i ++;
-    for(;i < len;s2[i - PRE - 1] = buff[i], i ++) ;
+	for(i = 0;buff[i] && buff[i] != ' ';i ++) s1[i] = buff[i];
+	i ++, j = i;
+    for(;i < len;s2[i - j] = buff[i], i ++) ;
 }
 
 void TransFile(const char* filename, int clicent_socket)

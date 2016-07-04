@@ -1,5 +1,7 @@
 #include "unity.h"
 
+#define RECV_FILE_PATH "../downloads/filex.c"
+
 int main(int argc, char const *argv[])
 {
 	struct sockaddr_in server;
@@ -24,7 +26,7 @@ int main(int argc, char const *argv[])
 		writeReq(s, cmd);
 		if(strcmp(cmd, "RETR") == 0)
 		{
-			recvFile("../downloads/filex.c", s);
+			recvFile(RECV_FILE_PATH, s);
 		}
 		else 
 		{

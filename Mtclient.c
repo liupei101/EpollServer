@@ -4,6 +4,7 @@
 #define CLIENT_MAX_NUM 20
 
 int portVal[CLIENT_MAX_NUM];
+// for initialiaze
 void init()
 {
 	int i;
@@ -40,7 +41,7 @@ void *client_run(void *args)
 	sleep(RAND_INT());
 
 	// send something!
-	writeReq(client_socket, "USER xxx");
+	writeReq(client_socket, "USER liupei");
 	readRes(client_socket);
 
 	sleep(RAND_INT());

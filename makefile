@@ -5,7 +5,7 @@ CFLAGS = -g
 ALL: obj/S obj/SC obj/MC
 	
 
-obj/S: Server.c unity.h
+obj/S: Server.c unity.h userManager.h
 	$(CC) -o obj/S Server.c
 
 obj/SC: Sgclient.c unity.h
