@@ -2,19 +2,19 @@
 CC = gcc
 CFLAGS = -g
 
-ALL: S SC MC
+ALL: obj/S obj/SC obj/MC
 	
 
-S: Server.c unity.h
-	$(CC) -o S Server.c
+obj/S: Server.c unity.h
+	$(CC) -o obj/S Server.c
 
-SC: Sgclient.c unity.h
-	$(CC) -o SC Sgclient.c
+obj/SC: Sgclient.c unity.h
+	$(CC) -o obj/SC Sgclient.c
 
-MC: Mtclient.c unity.h
-	$(CC) -o MC Mtclient.c
+obj/MC: Mtclient.c unity.h
+	$(CC) -o obj/MC Mtclient.c -lpthread
 
 clean:
-	rm -f S SC MC
+	rm -f obj/S obj/SC obj/MC
 
 #END

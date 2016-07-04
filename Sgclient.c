@@ -24,7 +24,7 @@ int main(int argc, char const *argv[])
 		writeReq(s, cmd);
 		if(strcmp(cmd, "RETR") == 0)
 		{
-			recvFile("testx.c", s);
+			recvFile("../downloads/filex.c", s);
 		}
 		else 
 		{

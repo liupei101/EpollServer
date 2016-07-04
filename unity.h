@@ -8,6 +8,7 @@
 #include <netinet/in.h>
 #include <time.h>
 #include <string.h>
+#include <stdlib.h>
 #include <unistd.h>
 #include <stdio.h>
 
@@ -21,12 +22,25 @@
 #define BUFFLEN 1024
 #define CLICENT_NUM 20
 #define PRE 4
+#define STR_MAX_LEN 50
+
+int RAND_INT()
+{
+	srand(time(NULL));
+	return (rand() % 6 + 1);
+}
 
 void getFileName(int num, char* filename)
 {
 	memset(filename, 0, sizeof(filename));
-	filename[0] = 'a' + num;
-	filename[1] = '.', filename[2] = 'c';
+	char name[STR_MAX_LEN] = "../downloads/x.c";
+	int i, len = strlen(name);
+	memcpy(filename, name, sizeof(name));
+
+	for(i = 0;i < len;i ++) if(filename[i] == 'x')
+	{
+		filename[i] = 'a' + num;
+	}
 }
 
 void readRes(int s)

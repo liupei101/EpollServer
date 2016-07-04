@@ -1,22 +1,78 @@
-#include "unity.h"
+#include <sys/socket.h>
+#include <sys/epoll.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+#include <fcntl.h>
+#include <unistd.h>
+#include <stdio.h>
 
-#define N 1024
+#define OPEN_MAX 100
+#define BACKLOG 5
+#define SERV_PORT 8888
+#define INFTIM 1000
+#define MAXEVT 20
+#define MAXFD 256
+#define BUFFLEN 1024
+#define PRE 4
+#define MAXCMD 10
 
-int status[N];
-
-void doWarning(int clicent_socket)
+void setnonblocking(int s_s)
 {
+	int opts = fcntl(s_s, F_GETFL);
+	if(opts < 0)
+	{
+		perror("Set NonBlocking Error!");
+		return ;
+	}
+
+	opts |= O_NONBLOCK;
+	if(fcntl(s_s, F_SETFL, opts) < 0)
+	{
+		perror("Set opts Error!");
+		return ;
+	}
+}
+void dispatchCmd(const char buff[], char *s1, char *s2)
+{
+	int i, len = strlen(buff);
+	memset(s1, 0, sizeof s1);
+	memset(s2, 0, sizeof s2);
+
+	for(i = 0;i < PRE;i ++) s1[i] = buff[i];
+	i ++;
+    for(;i < len;s2[i - PRE - 1] = buff[i], i ++) ;
+}
+void TransFile(int clicent_socket)
+{
+	char *filename = "test.c";
+	FILE *file = fopen(filename, "rb");
+	fseek(file, 0, 2);
+	long size = ftell(file);
+	fseek(file, 0, 0);
+	int n = 0;
 	char buff[BUFFLEN];
-	memset(buff, 0, sizeof(buff));
-	sprintf(buff, "Welcome ID(%d): Connection completed, Please Login!", clicent_socket);
-	send(clicent_socket, buff, strlen(buff), 0);
-}
+	bzero(buff, BUFFLEN);
+	int sum_size = 0;
 
-int checkout(char* pass)
-{
-	return strcmp(pass, "12345") == 0;
-}
+    struct timeval start, end;
+    gettimeofday(&start, NULL);
 
+    while((n = fread(buff, 1, BUFFLEN, file)) > 0) 
+    {
+        send(clicent_socket, buff, n, 0);
+
+		gettimeofday(&end, NULL);
+        sum_size += n;
+
+	    double timer = 1000000 * (end.tv_sec - start.tv_sec) + end.tv_usec - start.tv_usec;
+	    printf("%.1lf%%    %.1lf kb/s\n", (double)100 * sum_size / size, (double)sum_size / 1024.0 / (timer * 1e-6));
+
+        bzero(buff, BUFFLEN);
+        if(sum_size == size) break;
+    }
+	fclose(file);
+	printf("File transfer completed!\n");
+}
 void doResponse(int clicent_socket, const char buff[])
 {
 	// client request for downloading file
@@ -28,17 +84,11 @@ void doResponse(int clicent_socket, const char buff[])
 	if(strcmp(arg1, "RETR") == 0)
 	{
 		printf(">>> FROM Client(%d) : %s\n", clicent_socket, buff);
-		if(status[clicent_socket] < 1) 
-		{
-			doWarning(clicent_socket);
-			return ;
-		}
 		// transFile to client
-		TransFile("../downloads/file.c", clicent_socket);
+		TransFile(clicent_socket);
 	}
 	else if(strcmp(arg1, "USER") == 0)
 	{
-		status[clicent_socket] = 0;
 		printf(">>> FROM Client(%d) : %s\n", clicent_socket, buff);
 		sprintf(msg, "password for %s: ", arg2);
 		send(clicent_socket, msg, strlen(msg), 0);
@@ -47,23 +97,8 @@ void doResponse(int clicent_socket, const char buff[])
 	{
 		printf(">>> FROM Client(%d) : %s\n", clicent_socket, buff);
 		// No checking for password!
-		if(status[clicent_socket] != 0)
-		{
-			sprintf(msg, "Input Error, No Response!");
-			send(clicent_socket, msg, strlen(msg), 0);
-			return ;
-		}
-		if(checkout(arg2) == 1)
-		{
-			status[clicent_socket] = 1;
-			sprintf(msg, "Login successfully!");
-			send(clicent_socket, msg, strlen(msg), 0);
-		}
-		else 
-		{
-			sprintf(msg, "Username or Password Error!");
-			send(clicent_socket, msg, strlen(msg), 0);
-		}
+		sprintf(msg, "Login successfully!");
+		send(clicent_socket, msg, strlen(msg), 0);
 	}
 	else 
 	{
@@ -85,7 +120,6 @@ void handle_message(int epfd, struct epoll_event* ev)
 	{
 		printf("client(%d): Connect Error or closed!\n", clicent_socket);
 		// delete invalid connection from epoll
-		status[clicent_socket] = -1;
 		epoll_ctl(epfd, EPOLL_CTL_DEL, clicent_socket, ev);
 		close(clicent_socket);
 	}
@@ -94,11 +128,12 @@ void handle_message(int epfd, struct epoll_event* ev)
 		doResponse(clicent_socket, buff);
 	}
 }
-
 void handle_connect(int epfd, struct epoll_event* ev)
 {
+	char buff[BUFFLEN];
 	struct sockaddr_in clientaddr;
 	socklen_t socklen = sizeof(struct sockaddr_in);
+	memset(buff, 0, sizeof(buff));
 
 	int listenfd = (*ev).data.fd;
 	int clicent_socket = accept(listenfd, (struct sockaddr*)&clientaddr, &socklen);
@@ -108,15 +143,14 @@ void handle_connect(int epfd, struct epoll_event* ev)
 	epoll_ctl(epfd, EPOLL_CTL_ADD, clicent_socket, ev);
 
 	// for new connection , send "Welcome"
-	if(status[clicent_socket] == -1) doWarning(clicent_socket);
+	sprintf(buff, "ID(%d): Connection completed, Welcome!", clicent_socket);
+	send(clicent_socket, buff, strlen(buff), 0);
 }
-
 int main()
 {
 	int i, listenfd, connfd, sockfd, epfd, nfds;
 	char buff[BUFFLEN];
-	memset(status, -1, sizeof(status));
-
+	
 	struct epoll_event ev, events[MAXEVT];
 	epfd = epoll_create(MAXFD);
 
@@ -159,4 +193,5 @@ int main()
 		}
 	}
 	return 0;
+
 }
