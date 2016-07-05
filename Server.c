@@ -77,6 +77,12 @@ void doResponse(int clicent_socket, const char buff[])
 			send(clicent_socket, msg, strlen(msg), 0);
 		}
 	}
+	else if(strcmp(arg1, "AUTH") == 0)
+	{
+		if(!isLogin(&user[clicent_socket])) sprintf(msg, "SACK");
+		else sprintf(msg, "SNAK");
+		send(clicent_socket , msg, strlen(msg), 0);
+	}
 	else 
 	{
 		printf(">>> FROM Client(%d) : %s\n", clicent_socket, buff);

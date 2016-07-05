@@ -2,6 +2,25 @@
 
 #define RECV_FILE_PATH "../downloads/filex.c"
 
+void handleFileTransfer(int s, char *cmd)
+{
+	char buff[BUFFLEN];
+	memset(buff, 0, sizeof(buff));
+
+	writeReq(s, "AUTH");
+	recv(s, buff, BUFFLEN, 0);
+	if(strcmp(buff, "SACK") == 0) // hava auth for RETR cmd
+	{
+		writeReq(s, "RETR");
+		recvFile(RECV_FILE_PATH, s);
+	}
+	else if(strcmp(buff, "SNAK") == 0)
+	{
+		printf("Server: no authorization!\n");
+	}
+	else ;
+}
+
 int main(int argc, char const *argv[])
 {
 	struct sockaddr_in server;
@@ -22,17 +41,15 @@ int main(int argc, char const *argv[])
 		printf("Client >>> ");
 		gets(cmd);
 		if(strcmp(cmd, "EXIT") == 0) break;
-
-		writeReq(s, cmd);
 		if(strcmp(cmd, "RETR") == 0)
 		{
-			recvFile(RECV_FILE_PATH, s);
+			handleFileTransfer(s, cmd);
+			continue;
 		}
-		else 
-		{
-			printf("Server: ");
-			readRes(s);
-		}
+
+		writeReq(s, cmd);
+		printf("Server: ");
+		readRes(s);
 	}
 
 	sleep(1);
