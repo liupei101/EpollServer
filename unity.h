@@ -23,6 +23,7 @@
 #define CLICENT_NUM 20
 #define PRE 4
 #define STR_MAX_LEN 50
+#define KEY 24
 
 int RAND_INT()
 {
@@ -43,6 +44,37 @@ void getFileName(int num, char* filename)
 	}
 }
 
+void dispatchCmd(const char buff[], char *s1, char *s2)
+{
+	int i, j, len = strlen(buff);
+	memset(s1, 0, sizeof s1);
+	memset(s2, 0, sizeof s2);
+
+	for(i = 0;buff[i] && buff[i] != ' ';i ++) s1[i] = buff[i];
+	i ++, j = i;
+    for(;i < len;s2[i - j] = buff[i], i ++) ;
+}
+
+void connectCmd(char buff[], const char *s1, const char *s2)
+{
+	int i, j = 0;
+	for(i = 0;s1[i];buff[j] = s1[i], ++ i, ++ j);
+	buff[j] = ' ', j ++;
+	for(i = 0;s2[i];buff[j] = s2[i], ++ i, ++ j);
+}
+
+void encrypt(char *password,const char key)
+{
+	int i;
+	for(i = 0;password[i];password[i] = password[i] ^ key, i ++);
+}
+
+void decrypt(char *password, const char key)
+{
+	int i;
+	for(i = 0;password[i];password[i] = password[i] ^ key, i ++);
+}
+
 void readRes(int s)
 {
 	char buff[BUFFLEN];
@@ -53,9 +85,14 @@ void readRes(int s)
 
 void writeReq(int s, char *str)
 {
-	char buff[BUFFLEN];
-	memset(buff, 0, BUFFLEN);
-	strcpy(buff, str);
+	char buff[BUFFLEN], s1[BUFFLEN], s2[BUFFLEN];
+	memset(buff, 0, sizeof(buff));
+	dispatchCmd(str, s1, s2);
+	if(strcmp(s1, "PASS") == 0) // if cmd is "PASS",  then encrypt it
+	{
+		encrypt(s2, KEY);
+	}
+	connectCmd(buff, s1, s2);
 	send(s, buff, strlen(buff), 0);
 }
 
@@ -96,17 +133,6 @@ void setnonblocking(int s_s)
 		perror("Set opts Error!");
 		return ;
 	}
-}
-
-void dispatchCmd(const char buff[], char *s1, char *s2)
-{
-	int i, j, len = strlen(buff);
-	memset(s1, 0, sizeof s1);
-	memset(s2, 0, sizeof s2);
-
-	for(i = 0;buff[i] && buff[i] != ' ';i ++) s1[i] = buff[i];
-	i ++, j = i;
-    for(;i < len;s2[i - j] = buff[i], i ++) ;
 }
 
 void TransFile(const char* filename, int clicent_socket)
@@ -172,6 +198,5 @@ void recvFile(const char* filename, int s)
 	fclose(file);
     printf("Recive completed!\n");
 }
-
 
 #endif

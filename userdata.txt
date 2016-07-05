@@ -2,4 +2,4 @@ liupei 12345
 usertest 12345
 NUM_24 12345
 test 123
-liunx abc
+linux abc

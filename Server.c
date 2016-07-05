@@ -64,6 +64,7 @@ void doResponse(int clicent_socket, const char buff[])
 			send(clicent_socket, msg, strlen(msg), 0);
 			return ;
 		}
+		decrypt(arg2, KEY);
 		if(checkoutPassword(&user[clicent_socket], arg2))
 		{
 			setLogin(&user[clicent_socket]);
