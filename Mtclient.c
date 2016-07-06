@@ -9,6 +9,8 @@ void init()
 {
 	int i;
 	for(i = 0;i < CLIENT_MAX_NUM;i ++) portVal[i] = i;
+	
+	srand(time(NULL));
 }
 
 void *client_run(void *args)

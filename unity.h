@@ -27,7 +27,6 @@
 
 int RAND_INT()
 {
-	srand(time(NULL));
 	return (rand() % 6 + 1);
 }
 
